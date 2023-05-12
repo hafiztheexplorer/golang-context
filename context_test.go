@@ -118,3 +118,46 @@ func TestContextWithCancel(t *testing.T) {
 	time.Sleep(2 * time.Second)
 	fmt.Println("Total GoRoutine yang terjadi =", runtime.NumGoroutine())
 }
+
+// function context with Timeout/////////////////////////////////////////////////
+
+func TestContextWithTimeout(t *testing.T) {
+	fmt.Println(runtime.NumGoroutine())
+
+	parent := context.Background()
+	ctx, cancel := context.WithTimeout(parent, 3*time.Second)
+	defer cancel()
+
+	destination := FungsiPenghitungSederhanadenganTimeout(ctx)
+	for n := range destination {
+		fmt.Println("Counter", n)
+	}
+
+	fmt.Println(runtime.NumGoroutine())
+}
+
+func FungsiPenghitungSederhanadenganTimeout(ctx context.Context) chan int {
+	// membuat channel dengan nama destination, dan dia mengembalikan return value berupa int
+	destination := make(chan int)
+
+	// membuat goroutine denan blank function
+	go func() {
+		// kalau sudah selesai go routine akan diclose
+		defer close(destination)
+
+		counter := 1
+		// perulangan yang tidak akan berhenti, karena menghitung terus tanpa limit
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				destination <- counter
+				counter++
+				// time.Sleep(1 * time.Second) // pensimulasian proses lemot
+			}
+		}
+
+	}()
+	return destination
+}
